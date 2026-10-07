@@ -19,6 +19,11 @@ import javafx.stage.Stage;
 
 public class LodgeBillingApp extends Application {
 
+
+    private static double number(String text) {
+        String t = text.trim();
+        return t.isEmpty() ? 0 : Double.parseDouble(t);
+    }
     @Override
     public void start(Stage stage) {
         Label title = new Label("Lodge Billing Lab");
@@ -40,6 +45,8 @@ public class LodgeBillingApp extends Application {
         TextArea notesArea = new TextArea();
         notesArea.setPrefRowCount(3);
         notesArea.setPrefRowCount(25);
+        notesArea.setPrefHeight(70);
+        notesArea.setMaxHeight(70);
 
         GridPane form = new GridPane();
         form.setHgap(10);
@@ -63,11 +70,51 @@ public class LodgeBillingApp extends Application {
 
         Label status = new Label();
 
-        VBox root = new VBox(12, title, form, buttons, status);
+        Label summary = new Label();
+
+        Runnable update = () -> {
+            String room = roomBox.getValue();
+            String currency = currencyBox.getValue();
+            if (room == null || currency == null) {
+                summary.setText("");
+                return;
+            }
+            try {
+                int nights = Integer.parseInt(nightsField.getText().trim());
+                if (nights < 1) {
+                    summary.setText("");
+                    return;
+                }
+                double extras = number(extrasField.getText());
+                double paid = number(paidField.getText());
+
+                double roomCharge = BillingCalculator.roomCharge(room, nights);
+                double discount = BillingCalculator.discount(room, nights);
+                double total = BillingCalculator.total(room, nights, extras);
+                double balance = total - paid;
+
+                summary.setText(String.format(
+                        "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f%nTotal: K%.2f%nTotal in %s: %.2f%nPaid: K%.2f%nBalance: K%.2f",
+                        roomCharge, discount, extras, total,
+                        currency, BillingCalculator.convert(total, currency),
+                        paid, balance));
+            } catch (NumberFormatException e) {
+                summary.setText("");
+            }
+        };
+
+        nightsField.textProperty().addListener((obs, oldText, newText) -> update.run());
+        extrasField.textProperty().addListener((obs, oldText, newText) -> update.run());
+        paidField.textProperty().addListener((obs, oldText, newText) -> update.run());
+        roomBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
+        currencyBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
+        calculateButton.setOnAction(e -> update.run());
+
+        VBox root = new VBox(12, title, form, buttons, summary, status);
         root.setPadding(new Insets(20));
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 600, 560));
+        stage.setScene(new Scene(root, 600, 640));
         stage.show();
     }
 

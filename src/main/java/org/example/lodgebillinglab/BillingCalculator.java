@@ -32,7 +32,7 @@ public class BillingCalculator {
     }
 
     public static double discount(String roomType, int nights) {
-        if (nights > DISCOUNT_FROM_NIGHTS) {
+        if (nights >= DISCOUNT_FROM_NIGHTS) {
             return roomCharge(roomType, nights) * DISCOUNT_RATE;
         }
         return 0;
