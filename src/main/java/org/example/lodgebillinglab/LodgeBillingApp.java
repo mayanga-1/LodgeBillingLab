@@ -1,5 +1,10 @@
 package org.example.lodgebillinglab;
 
+import javafx.collections.ObservableList;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -19,6 +24,8 @@ import javafx.stage.Stage;
 
 public class LodgeBillingApp extends Application {
 
+    private final ObservableList<Bill> bills = FXCollections.observableArrayList();
+    private int nextBillNumber = 1;
 
     private static double number(String text) {
         String t = text.trim();
@@ -55,6 +62,18 @@ public class LodgeBillingApp extends Application {
             return "Amount paid must be a number.";
         }
         return null;
+    }
+    private static TableColumn<Bill, Number> moneyColumn(String title, String property) {
+        TableColumn<Bill, Number> column = new TableColumn<>(title);
+        column.setCellValueFactory(new PropertyValueFactory<>(property));
+        column.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number value, boolean empty) {
+                super.updateItem(value, empty);
+                setText(empty || value == null ? null : String.format("K%.2f", value.doubleValue()));
+            }
+        });
+        return column;
     }
     @Override
     public void start(Stage stage) {
@@ -150,12 +169,31 @@ public class LodgeBillingApp extends Application {
             status.setText("");
             update.run();
         });
+        TableView<Bill> table = new TableView<>(bills);
 
-        VBox root = new VBox(12, title, form, buttons, summary, status);
+        TableColumn<Bill, String> idCol = new TableColumn<>("Bill");
+        idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+        TableColumn<Bill, String> guestCol = new TableColumn<>("Guest");
+        guestCol.setCellValueFactory(new PropertyValueFactory<>("guest"));
+        TableColumn<Bill, String> roomCol = new TableColumn<>("Room");
+        roomCol.setCellValueFactory(new PropertyValueFactory<>("roomType"));
+        TableColumn<Bill, Number> nightsCol = new TableColumn<>("Nights");
+        nightsCol.setCellValueFactory(new PropertyValueFactory<>("nights"));
+        TableColumn<Bill, String> currencyCol = new TableColumn<>("Pay in");
+        currencyCol.setCellValueFactory(new PropertyValueFactory<>("currency"));
+
+        table.getColumns().addAll(idCol, guestCol, roomCol, nightsCol,
+                moneyColumn("Total", "total"),
+                moneyColumn("Paid", "paid"),
+                moneyColumn("Balance", "balance"),
+                currencyCol);
+        table.setPrefHeight(180);
+
+        VBox root = new VBox(12, title, form, buttons, summary, status, table);
         root.setPadding(new Insets(20));
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 600, 640));
+        stage.setScene(new Scene(root, 760, 700));
         stage.show();
     }
 
