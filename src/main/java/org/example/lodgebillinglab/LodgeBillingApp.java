@@ -1,5 +1,8 @@
 package org.example.lodgebillinglab;
 
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
@@ -35,11 +38,17 @@ public class LodgeBillingApp extends Application {
         currencyBox.setValue("ZMW");
 
         TextArea notesArea = new TextArea();
+        notesArea.setPrefRowCount(3);
         notesArea.setPrefRowCount(25);
 
         GridPane form = new GridPane();
         form.setHgap(10);
         form.setVgap(10);
+        ColumnConstraints labelColumn = new ColumnConstraints();
+        labelColumn.setMinWidth(Region.USE_PREF_SIZE);
+        ColumnConstraints fieldColumn = new ColumnConstraints();
+        fieldColumn.setHgrow(Priority.ALWAYS);
+        form.getColumnConstraints().addAll(labelColumn, fieldColumn);
         form.addRow(0, new Label("Guest name"), guestField);
         form.addRow(1, new Label("Room type"), roomBox);
         form.addRow(2, new Label("Nights"), nightsField);
