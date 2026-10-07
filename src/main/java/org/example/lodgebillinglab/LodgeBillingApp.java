@@ -24,6 +24,38 @@ public class LodgeBillingApp extends Application {
         String t = text.trim();
         return t.isEmpty() ? 0 : Double.parseDouble(t);
     }
+
+    private static String check(String guest, String room, String nightsText,
+                                String extrasText, String paidText) {
+        if (guest.trim().isEmpty()) {
+            return "Enter the guest name.";
+        }
+        if (room == null) {
+            return "Choose a room type.";
+        }
+        try {
+            if (Integer.parseInt(nightsText.trim()) < 1) {
+                return "Nights must be 1 or more.";
+            }
+        } catch (NumberFormatException e) {
+            return "Nights must be a whole number.";
+        }
+        try {
+            if (number(extrasText) < 0) {
+                return "Extras cannot be negative.";
+            }
+        } catch (NumberFormatException e) {
+            return "Extras must be a number.";
+        }
+        try {
+            if (number(paidText) < 0) {
+                return "Amount paid cannot be negative.";
+            }
+        } catch (NumberFormatException e) {
+            return "Amount paid must be a number.";
+        }
+        return null;
+    }
     @Override
     public void start(Stage stage) {
         Label title = new Label("Lodge Billing Lab");
@@ -108,7 +140,16 @@ public class LodgeBillingApp extends Application {
         paidField.textProperty().addListener((obs, oldText, newText) -> update.run());
         roomBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
         currencyBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
-        calculateButton.setOnAction(e -> update.run());
+        calculateButton.setOnAction(e -> {
+            String problem = check(guestField.getText(), roomBox.getValue(),
+                    nightsField.getText(), extrasField.getText(), paidField.getText());
+            if (problem != null) {
+                status.setText(problem);
+                return;
+            }
+            status.setText("");
+            update.run();
+        });
 
         VBox root = new VBox(12, title, form, buttons, summary, status);
         root.setPadding(new Insets(20));
