@@ -1,5 +1,8 @@
 package org.example.lodgebillinglab;
 
+import java.util.Optional;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -95,7 +98,7 @@ public class LodgeBillingApp extends Application {
 
         TextArea notesArea = new TextArea();
         notesArea.setPrefRowCount(3);
-        notesArea.setPrefRowCount(25);
+        notesArea.setPrefColumnCount(25);
         notesArea.setPrefHeight(70);
         notesArea.setMaxHeight(70);
 
@@ -169,6 +172,35 @@ public class LodgeBillingApp extends Application {
             status.setText("");
             update.run();
         });
+
+        saveButton.setOnAction(e -> {
+            String problem = check(guestField.getText(), roomBox.getValue(),
+                    nightsField.getText(), extrasField.getText(), paidField.getText());
+            if (problem != null) {
+                status.setText(problem);
+                return;
+            }
+
+            String room = roomBox.getValue();
+            int nights = Integer.parseInt(nightsField.getText().trim());
+            double total = BillingCalculator.total(room, nights, number(extrasField.getText()));
+            double paid = number(paidField.getText());
+            String id = String.format("B%03d", nextBillNumber++);
+
+            bills.add(new Bill(id, guestField.getText().trim(), room, nights,
+                    total, paid, currencyBox.getValue()));
+            status.setText("Saved " + id + ". Balance: " + String.format("K%.2f", total - paid));
+
+            guestField.clear();
+            nightsField.clear();
+            extrasField.clear();
+            paidField.clear();
+            notesArea.clear();
+            roomBox.setValue(null);
+            currencyBox.setValue("ZMW");
+            guestField.requestFocus();
+        });
+
         TableView<Bill> table = new TableView<>(bills);
 
         TableColumn<Bill, String> idCol = new TableColumn<>("Bill");
@@ -189,11 +221,31 @@ public class LodgeBillingApp extends Application {
                 currencyCol);
         table.setPrefHeight(180);
 
-        VBox root = new VBox(12, title, form, buttons, summary, status, table);
+        Button deleteButton = new Button("Delete selected bill");
+        deleteButton.setOnAction(e -> {
+            Bill selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                status.setText("Select a bill to delete.");
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Confirm deletion");
+            confirm.setHeaderText("Delete bill " + selected.getId() + " for " + selected.getGuest() + "?");
+            ButtonType deleteType = new ButtonType("Delete");
+            confirm.getButtonTypes().setAll(deleteType, ButtonType.CANCEL);
+
+            Optional<ButtonType> result = confirm.showAndWait();
+            if (result.isPresent() && result.get() == deleteType) {
+                bills.remove(selected);
+                status.setText("Deleted " + selected.getId() + ".");
+            }
+        });
+
+        VBox root = new VBox(12, title, form, buttons, summary, status, table, deleteButton);
         root.setPadding(new Insets(20));
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 760, 700));
+        stage.setScene(new Scene(root, 760, 760));
         stage.show();
     }
 
