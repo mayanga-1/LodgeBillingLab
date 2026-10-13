@@ -322,6 +322,11 @@ public class LodgeBillingApp extends Application {
         MenuBar menuBar = new MenuBar(fileMenu, helpMenu);
         ToolBar toolBar = new ToolBar(newGuestButton, receiptButton, deleteButton);
 
+        title.getStyleClass().add("title");
+        calculateButton.getStyleClass().add("primary");
+        summaryBox.getStyleClass().add("summary-card");
+        totals.getStyleClass().add("totals");
+        status.getStyleClass().add("status");
         VBox content = new VBox(12, title, form, buttons, summaryBox, status, table);
         content.setPadding(new Insets(20));
 
@@ -330,7 +335,9 @@ public class LodgeBillingApp extends Application {
 
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 760, 770));
+        Scene scene = new Scene(root, 760, 770);
+        scene.getStylesheets().add(getClass().getResource("lodge.css").toExternalForm());
+        stage.setScene(scene);
         stage.show();
     }
 

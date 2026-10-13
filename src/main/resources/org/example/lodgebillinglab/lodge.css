@@ -1,0 +1,63 @@
+/* Aquatic premium palette
+   Deep ocean  #0B3C49   Teal  #0E7C86   Aqua  #2EC4B6
+   Seafoam     #EAF7F6   Pearl #FFFFFF   Sand  #F2D6A2 */
+
+.root {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 13px;
+    -fx-background-color: #EAF7F6;
+}
+
+.menu-bar { -fx-background-color: #0B3C49; }
+.menu-bar .menu > .label { -fx-text-fill: #CFF3EF; }
+
+.tool-bar { -fx-background-color: #0E5A66; -fx-padding: 6 10; }
+.tool-bar .button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #CFF3EF;
+    -fx-border-color: #2EC4B6;
+    -fx-border-radius: 18;
+    -fx-background-radius: 18;
+}
+.tool-bar .button:hover { -fx-background-color: #2EC4B6; -fx-text-fill: #0B3C49; }
+
+.button {
+    -fx-background-color: #2EC4B6;
+    -fx-text-fill: #0B3C49;
+    -fx-font-weight: bold;
+    -fx-background-radius: 18;
+    -fx-padding: 7 18;
+    -fx-cursor: hand;
+}
+.button:hover { -fx-background-color: #5ED6CB; }
+.primary { -fx-background-color: #0E7C86; -fx-text-fill: white; }
+.primary:hover { -fx-background-color: #0B6870; }
+
+.title { -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0B3C49; }
+.label { -fx-text-fill: #134E5A; }
+.status { -fx-text-fill: #0E7C86; -fx-font-style: italic; }
+
+.text-field, .combo-box, .text-area {
+    -fx-background-color: white;
+    -fx-border-color: #A8DCD7;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+.text-area .content { -fx-background-color: white; }
+.text-field:focused, .combo-box:focused, .text-area:focused { -fx-border-color: #2EC4B6; }
+
+.summary-card {
+    -fx-background-color: linear-gradient(to right, #0B3C49, #0E7C86);
+    -fx-background-radius: 12;
+    -fx-padding: 14 20;
+}
+.summary-card .label { -fx-text-fill: #EAF7F6; -fx-font-size: 14px; }
+.summary-card .totals { -fx-text-fill: #F2D6A2; }
+
+.table-view { -fx-border-color: #A8DCD7; }
+.table-view .column-header-background,
+.table-view .column-header,
+.table-view .filler { -fx-background-color: #0B3C49; }
+.table-view .column-header .label { -fx-text-fill: #CFF3EF; -fx-font-weight: bold; }
+.table-row-cell:odd { -fx-background-color: #F4FBFA; }
+.table-row-cell:selected { -fx-background-color: #2EC4B6; }
