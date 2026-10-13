@@ -1,41 +1,18 @@
 package org.example.lodgebillinglab;
 
-import javafx.print.PrinterJob;
-import javafx.application.Platform;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.BorderPane;import javafx.application.Platform;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.ToolBar;
-import javafx.scene.layout.BorderPane;
-import java.util.Optional;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.collections.ObservableList;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.print.PrinterJob;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
+
+import java.util.Optional;
 
 public class LodgeBillingApp extends Application {
 
@@ -137,19 +114,29 @@ public class LodgeBillingApp extends Application {
 
         Label status = new Label();
 
-        Label summary = new Label("Press Calculate to see the bill");
+        Label summary = new Label("Press Calculate to see the bill.");
+        Label totals = new Label("");
+        totals.setStyle("-fx-font-weight: bold;");
+
+        summary.setMinWidth(240);
+        summary.setMinHeight(Region.USE_PREF_SIZE);
+        totals.setMinHeight(Region.USE_PREF_SIZE);
+
+        HBox summaryBox = new HBox(60, summary, totals);
 
         Runnable update = () -> {
             String room = roomBox.getValue();
             String currency = currencyBox.getValue();
             if (room == null || currency == null) {
                 summary.setText("");
+                totals.setText("");
                 return;
             }
             try {
                 int nights = Integer.parseInt(nightsField.getText().trim());
                 if (nights < 1) {
                     summary.setText("");
+                    totals.setText("");
                     return;
                 }
                 double extras = number(extrasField.getText());
@@ -161,16 +148,22 @@ public class LodgeBillingApp extends Application {
                 double balance = total - paid;
 
                 summary.setText(String.format(
-                        "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f%nTotal (%s): %.2f%nPaid: K%.2f%nBalance: K%.2f",
-                        roomCharge, discount, extras,
+                        "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f",
+                        roomCharge, discount, extras));
+
+                totals.setText(String.format(
+                        "Total (%s): %.2f%nPaid: K%.2f%nBalance: K%.2f",
                         currency, BillingCalculator.convert(total, currency),
                         paid, balance));
-            } catch (NumberFormatException e) {
+
+            }catch (NumberFormatException e) {
                 summary.setText("");
+                totals.setText("");
             }
         };
 
-       Runnable resetSummary = () -> summary.setText("Press calculate to see the bill");
+       Runnable resetSummary = () -> { summary.setText("Press calculate to see the bill");
+       totals.setText("");};
        nightsField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
        extrasField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
        paidField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
@@ -329,7 +322,7 @@ public class LodgeBillingApp extends Application {
         MenuBar menuBar = new MenuBar(fileMenu, helpMenu);
         ToolBar toolBar = new ToolBar(newGuestButton, receiptButton, deleteButton);
 
-        VBox content = new VBox(12, title, form, buttons, summary, status, table);
+        VBox content = new VBox(12, title, form, buttons, summaryBox, status, table);
         content.setPadding(new Insets(20));
 
         BorderPane root = new BorderPane(content);
@@ -337,7 +330,7 @@ public class LodgeBillingApp extends Application {
 
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 760, 780));
+        stage.setScene(new Scene(root, 760, 770));
         stage.show();
     }
 
