@@ -1,5 +1,17 @@
 package org.example.lodgebillinglab;
 
+import javafx.print.PrinterJob;
+import javafx.application.Platform;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.BorderPane;import javafx.application.Platform;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.BorderPane;
 import java.util.Optional;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -79,6 +91,7 @@ public class LodgeBillingApp extends Application {
         return column;
     }
     @Override
+    @SuppressWarnings("unchecked")
     public void start(Stage stage) {
         Label title = new Label("Lodge Billing Lab");
 
@@ -124,7 +137,7 @@ public class LodgeBillingApp extends Application {
 
         Label status = new Label();
 
-        Label summary = new Label();
+        Label summary = new Label("Press Calculate to see the bill");
 
         Runnable update = () -> {
             String room = roomBox.getValue();
@@ -148,8 +161,8 @@ public class LodgeBillingApp extends Application {
                 double balance = total - paid;
 
                 summary.setText(String.format(
-                        "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f%nTotal: K%.2f%nTotal in %s: %.2f%nPaid: K%.2f%nBalance: K%.2f",
-                        roomCharge, discount, extras, total,
+                        "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f%nTotal (%s): %.2f%nPaid: K%.2f%nBalance: K%.2f",
+                        roomCharge, discount, extras,
                         currency, BillingCalculator.convert(total, currency),
                         paid, balance));
             } catch (NumberFormatException e) {
@@ -157,11 +170,12 @@ public class LodgeBillingApp extends Application {
             }
         };
 
-        nightsField.textProperty().addListener((obs, oldText, newText) -> update.run());
-        extrasField.textProperty().addListener((obs, oldText, newText) -> update.run());
-        paidField.textProperty().addListener((obs, oldText, newText) -> update.run());
-        roomBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
-        currencyBox.valueProperty().addListener((obs, oldValue, newValue) -> update.run());
+       Runnable resetSummary = () -> summary.setText("Press calculate to see the bill");
+       nightsField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
+       extrasField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
+       paidField.textProperty().addListener((obs, oldText, newText) -> resetSummary.run());
+       roomBox.valueProperty().addListener((obs, oldText, newText) -> resetSummary.run());
+       currencyBox.valueProperty().addListener((obs, oldText, newText) -> resetSummary.run());
         calculateButton.setOnAction(e -> {
             String problem = check(guestField.getText(), roomBox.getValue(),
                     nightsField.getText(), extrasField.getText(), paidField.getText());
@@ -172,7 +186,21 @@ public class LodgeBillingApp extends Application {
             status.setText("");
             update.run();
         });
+        Runnable clearForm = () -> {
+            guestField.clear();
+            nightsField.clear();
+            extrasField.clear();
+            paidField.clear();
+            notesArea.clear();
+            roomBox.setValue(null);
+            currencyBox.setValue("ZMW");
+            guestField.requestFocus();
+        };
 
+        Runnable newGuest = () -> {
+            clearForm.run();
+            status.setText("");
+        };
         saveButton.setOnAction(e -> {
             String problem = check(guestField.getText(), roomBox.getValue(),
                     nightsField.getText(), extrasField.getText(), paidField.getText());
@@ -180,6 +208,7 @@ public class LodgeBillingApp extends Application {
                 status.setText(problem);
                 return;
             }
+
 
             String room = roomBox.getValue();
             int nights = Integer.parseInt(nightsField.getText().trim());
@@ -191,14 +220,7 @@ public class LodgeBillingApp extends Application {
                     total, paid, currencyBox.getValue()));
             status.setText("Saved " + id + ". Balance: " + String.format("K%.2f", total - paid));
 
-            guestField.clear();
-            nightsField.clear();
-            extrasField.clear();
-            paidField.clear();
-            notesArea.clear();
-            roomBox.setValue(null);
-            currencyBox.setValue("ZMW");
-            guestField.requestFocus();
+            clearForm.run();
         });
 
         TableView<Bill> table = new TableView<>(bills);
@@ -241,11 +263,81 @@ public class LodgeBillingApp extends Application {
             }
         });
 
-        VBox root = new VBox(12, title, form, buttons, summary, status, table, deleteButton);
-        root.setPadding(new Insets(20));
+        Button newGuestButton = new Button("New guest");
+        newGuestButton.setOnAction(e -> newGuest.run());
+
+        Button receiptButton = new Button("View receipt");
+        receiptButton.setOnAction(e -> {
+            Bill selected = table.getSelectionModel().getSelectedItem();
+            if (selected == null) {
+                status.setText("Select a bill to view its receipt.");
+                return;
+            }
+
+            double roomCharge = BillingCalculator.roomCharge(selected.getRoomType(), selected.getNights());
+            double discount = BillingCalculator.discount(selected.getRoomType(), selected.getNights());
+            double extras = selected.getTotal() - roomCharge + discount;
+            String currency = selected.getCurrency();
+
+            Label receiptText = new Label(String.format(
+                    "LODGE BILLING RECEIPT%n%nBill: %s%nGuest: %s%nRoom: %s x %d nights%n%n"
+                            + "Room charge: K%.2f%nDiscount: -K%.2f%nExtras: K%.2f%n"
+                            + "Total (%s): %.2f%nPaid: K%.2f%nBalance: K%.2f%n%n"
+                            + "Exchange rates are practice rates, not live rates.",
+                    selected.getId(), selected.getGuest(), selected.getRoomType(), selected.getNights(),
+                    roomCharge, discount, extras,
+                    currency, BillingCalculator.convert(selected.getTotal(), currency),
+                    selected.getPaid(), selected.getBalance()));
+
+            Stage receiptStage = new Stage();
+            Button printButton = new Button("Print");
+
+            printButton.setOnAction(p -> {
+                PrinterJob job = PrinterJob.createPrinterJob();
+                if (job != null && job.showPrintDialog(receiptStage)) {
+                    if (job.printPage(receiptText)) {
+                        job.endJob();
+                        status.setText("Receipt for " + selected.getId() + " sent to printer.");
+                    }
+                }
+            });
+
+            VBox receiptBox = new VBox(15, receiptText, printButton);
+            receiptBox.setPadding(new Insets(25));
+            receiptStage.setTitle("Receipt " + selected.getId());
+            receiptStage.setScene(new Scene(receiptBox, 380, 420));
+            receiptStage.show();
+        });
+
+
+        MenuItem newGuestItem = new MenuItem("New guest");
+        newGuestItem.setOnAction(e -> newGuest.run());
+        MenuItem exitItem = new MenuItem("Exit");
+        exitItem.setOnAction(e -> Platform.exit());
+        Menu fileMenu = new Menu("File", null, newGuestItem, exitItem);
+
+        MenuItem aboutItem = new MenuItem("About");
+        aboutItem.setOnAction(e -> {
+            Alert about = new Alert(Alert.AlertType.INFORMATION);
+            about.setTitle("About");
+            about.setHeaderText("Lodge Billing Lab");
+            about.setContentText("ICT261 Advanced Java Programming\nMulungushi University");
+            about.showAndWait();
+        });
+        Menu helpMenu = new Menu("Help", null, aboutItem);
+
+        MenuBar menuBar = new MenuBar(fileMenu, helpMenu);
+        ToolBar toolBar = new ToolBar(newGuestButton, receiptButton, deleteButton);
+
+        VBox content = new VBox(12, title, form, buttons, summary, status, table);
+        content.setPadding(new Insets(20));
+
+        BorderPane root = new BorderPane(content);
+        root.setTop(new VBox(menuBar, toolBar));
+
 
         stage.setTitle("Lodge Billing Lab");
-        stage.setScene(new Scene(root, 760, 760));
+        stage.setScene(new Scene(root, 760, 780));
         stage.show();
     }
 
